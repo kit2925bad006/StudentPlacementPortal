@@ -340,28 +340,33 @@
     <div id="toast" class="toast">Action successful!</div>
 
     <script>
-        // Data Structures (Javascript Equivalents to HashMap, ArrayList, HashSet)
-        const studentsData = new Map(); // Simulates HashMap<Integer, Student>
-        const companiesData = []; // Simulates ArrayList<Company>
-        
-        class Student {
-            constructor(id, name, cgpa, branch) {
-                this.id = id;
-                this.name = name;
-                this.cgpa = parseFloat(cgpa);
-                this.branch = branch;
-                this.isPlaced = false;
-                this.appliedCompanyIds = new Set(); // Simulates HashSet<Integer>
-            }
+        let studentsData = new Map();
+        let companiesData = [];
+
+        async function apiRequest(path, options = {}) {
+            const response = await fetch(path, {
+                ...options,
+                headers: { 'Content-Type': 'application/json', ...options.headers }
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Request failed.');
+            return result;
         }
 
-        class Company {
-            constructor(id, name, minCgpa, branchesStr) {
-                this.id = id;
-                this.name = name;
-                this.minCgpa = parseFloat(minCgpa);
-                // Simulates HashSet<String>
-                this.eligibleBranches = new Set(branchesStr.split(',').map(b => b.trim().toUpperCase())); 
+        function escapeHTML(value) {
+            return String(value).replace(/[&<>"']/g, character => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[character]);
+        }
+
+        async function refreshData() {
+            try {
+                const data = await apiRequest('/api/state');
+                studentsData = new Map(data.students.map(student => [student.id, student]));
+                companiesData = data.companies;
+                updateUI();
+            } catch (error) {
+                showToast(error.message, true);
             }
         }
 
@@ -389,85 +394,78 @@
         }
 
         // Core Logic
-        function handleStudentRegister(e) {
+        async function handleStudentRegister(e) {
             e.preventDefault();
-            const id = parseInt(document.getElementById('s-id').value);
-            
-            if (studentsData.has(id)) {
-                showToast('Student ID already exists!', true);
-                return;
+            try {
+                await apiRequest('/api/students', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        id: Number(document.getElementById('s-id').value),
+                        name: document.getElementById('s-name').value,
+                        cgpa: Number(document.getElementById('s-cgpa').value),
+                        branch: document.getElementById('s-branch').value
+                    })
+                });
+                e.target.reset();
+                showForm('student-form');
+                showToast('Student registered successfully!');
+                await refreshData();
+            } catch (error) {
+                showToast(error.message, true);
             }
-
-            const student = new Student(
-                id,
-                document.getElementById('s-name').value,
-                document.getElementById('s-cgpa').value,
-                document.getElementById('s-branch').value.toUpperCase()
-            );
-            
-            studentsData.set(id, student);
-            e.target.reset();
-            showForm('student-form');
-            showToast('Student registered successfully!');
-            updateUI();
         }
 
-        function handleCompanyAdd(e) {
+        async function handleCompanyAdd(e) {
             e.preventDefault();
-            const id = parseInt(document.getElementById('c-id').value);
-            
-            if (companiesData.some(c => c.id === id)) {
-                showToast('Company ID already exists!', true);
-                return;
+            try {
+                await apiRequest('/api/companies', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        id: Number(document.getElementById('c-id').value),
+                        name: document.getElementById('c-name').value,
+                        minCgpa: Number(document.getElementById('c-cgpa').value),
+                        eligibleBranches: document.getElementById('c-branches').value.split(',')
+                    })
+                });
+                e.target.reset();
+                showForm('company-form');
+                showToast('Company added successfully!');
+                await refreshData();
+            } catch (error) {
+                showToast(error.message, true);
             }
-
-            const company = new Company(
-                id,
-                document.getElementById('c-name').value,
-                document.getElementById('c-cgpa').value,
-                document.getElementById('c-branches').value
-            );
-            
-            companiesData.push(company);
-            e.target.reset();
-            showForm('company-form');
-            showToast('Company added successfully!');
-            updateUI();
         }
 
-        function applyForJob(studentId, companyId) {
+        async function applyForJob(studentId, companyId) {
             const student = studentsData.get(studentId);
             const company = companiesData.find(c => c.id === companyId);
-            
             if (!student || !company) return;
-            
-            if (student.isPlaced) {
-                showToast('Student is already placed!', true);
-                return;
+            try {
+                await apiRequest(`/api/students/${studentId}/applications`, {
+                    method: 'POST',
+                    body: JSON.stringify({ companyId })
+                });
+                showToast(`Successfully applied to ${company.name}!`);
+                await refreshData();
+            } catch (error) {
+                showToast(error.message, true);
             }
-            
-            if (student.cgpa < company.minCgpa || !company.eligibleBranches.has(student.branch)) {
-                showToast('Not eligible for this company!', true);
-                return;
-            }
-            
-            if (student.appliedCompanyIds.has(companyId)) {
-                showToast('Already applied to this company!', true);
-                return;
-            }
-            
-            student.appliedCompanyIds.add(companyId);
-            showToast(`Successfully applied to ${company.name}!`);
-            updateUI();
         }
 
         // Placement Status Toggling
-        function togglePlacementStatus(studentId) {
+        async function togglePlacementStatus(studentId) {
             const student = studentsData.get(studentId);
             if (student) {
-                student.isPlaced = !student.isPlaced;
-                showToast(`Student status updated to ${student.isPlaced ? 'Placed' : 'Unplaced'}`);
-                updateUI();
+                try {
+                    const updatedStudent = await apiRequest(`/api/students/${studentId}/placement`, {
+                        method: 'PATCH',
+                        body: JSON.stringify({ isPlaced: !student.isPlaced })
+                    });
+                    showToast(`Student status updated to ${updatedStudent.isPlaced ? 'Placed' : 'Unplaced'}`);
+                    await refreshData();
+                } catch (error) {
+                    showToast(error.message, true);
+                }
             }
         }
 
@@ -483,10 +481,10 @@
             let companiesHTML = '';
             
             companiesData.forEach(c => {
-                const branches = Array.from(c.eligibleBranches).map(b => `<span class="badge">${b}</span>`).join('');
+                const branches = c.eligibleBranches.map(b => `<span class="badge">${escapeHTML(b)}</span>`).join('');
                 companiesHTML += `
                     <div class="card glass">
-                        <h3>${c.name} (ID: ${c.id})</h3>
+                        <h3>${escapeHTML(c.name)} (ID: ${c.id})</h3>
                         <p><strong>Min CGPA:</strong> ${c.minCgpa}</p>
                         <div style="margin-top: 1rem;">${branches}</div>
                     </div>
@@ -503,30 +501,30 @@
             studentsData.forEach(s => {
                 // Determine eligibility and application status for ALL companies
                 let companyStatuses = companiesData.map(c => {
-                    const hasApplied = s.appliedCompanyIds.has(c.id);
+                    const hasApplied = s.appliedCompanyIds.includes(c.id);
                     const cgpaEligible = s.cgpa >= c.minCgpa;
-                    const branchEligible = c.eligibleBranches.has(s.branch);
+                    const branchEligible = c.eligibleBranches.includes(s.branch);
 
                     if (s.isPlaced) {
-                        return `<p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">${c.name}: <span style="color:var(--success)">Cannot apply (Already Placed)</span></p>`;
+                        return `<p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">${escapeHTML(c.name)}: <span style="color:var(--success)">Cannot apply (Already Placed)</span></p>`;
                     } else if (hasApplied) {
-                        return `<p style="font-size: 0.85rem; color: var(--primary); margin-top: 0.5rem; font-weight:bold;">${c.name}: Applied Successfully ✓</p>`;
+                        return `<p style="font-size: 0.85rem; color: var(--primary); margin-top: 0.5rem; font-weight:bold;">${escapeHTML(c.name)}: Applied Successfully ✓</p>`;
                     } else if (!cgpaEligible) {
-                        return `<p style="font-size: 0.85rem; color: var(--danger); margin-top: 0.5rem;">${c.name}: Not Eligible (CGPA too low. Requires ${c.minCgpa})</p>`;
+                        return `<p style="font-size: 0.85rem; color: var(--danger); margin-top: 0.5rem;">${escapeHTML(c.name)}: Not Eligible (CGPA too low. Requires ${c.minCgpa})</p>`;
                     } else if (!branchEligible) {
-                        return `<p style="font-size: 0.85rem; color: var(--danger); margin-top: 0.5rem;">${c.name}: Not Eligible (Branch mismatch)</p>`;
+                        return `<p style="font-size: 0.85rem; color: var(--danger); margin-top: 0.5rem;">${escapeHTML(c.name)}: Not Eligible (Branch mismatch)</p>`;
                     } else {
                         return `<button class="btn-primary btn-sm" style="margin-top: 0.5rem; margin-right: 0.5rem;" 
                             onclick="applyForJob(${s.id}, ${c.id})">
-                            Apply to ${c.name}
+                            Apply to ${escapeHTML(c.name)}
                         </button>`;
                     }
                 }).join('');
 
                 studentsHTML += `
                     <div class="card glass">
-                        <h3>${s.name}</h3>
-                        <p><strong>ID:</strong> ${s.id} | <strong>Branch:</strong> ${s.branch}</p>
+                        <h3>${escapeHTML(s.name)}</h3>
+                        <p><strong>ID:</strong> ${s.id} | <strong>Branch:</strong> ${escapeHTML(s.branch)}</p>
                         <p><strong>CGPA:</strong> ${s.cgpa}</p>
                         
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-top:0.5rem; margin-bottom: 1rem;">
@@ -547,13 +545,7 @@
             studentsList.innerHTML = studentsHTML || '<p class="text-muted">No students found.</p>';
         }
         
-        // Add some mock data initially to showcase
-        setTimeout(() => {
-            companiesData.push(new Company(101, "TechCorp", 7.5, "CS, IT"));
-            companiesData.push(new Company(102, "DataSys", 8.0, "CS, ECE"));
-            studentsData.set(1, new Student(1, "Alice Johnson", 8.2, "CS"));
-            updateUI();
-        }, 100);
+        refreshData();
 
     </script>
 </body>
