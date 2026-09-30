@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Placement Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --accent: #8b5cf6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.15) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* Glassmorphism classes */
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            border-right: 1px solid var(--glass-border);
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-items {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            text-align: left;
+            padding: 1rem;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover, .nav-btn.active {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 3rem;
+            overflow-y: auto;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            font-weight: 700;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn-primary {
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -10px rgba(59, 130, 246, 0.5);
+        }
+        
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            width: auto;
+        }
+
+        /* Cards & Grids */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            padding: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h3 {
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        .card p {
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.1);
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-container {
+            max-width: 600px;
+            padding: 2rem;
+            margin: 0 auto;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 2rem;
+            background: var(--success);
+            color: white;
+            border-radius: 8px;
+            font-weight: 600;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .toast.error {
+            background: var(--danger);
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="logo">PlacementHub</div>
+        <div class="nav-items">
+            <button class="nav-btn active" onclick="showSection('dashboard')">Dashboard</button>
+            <button class="nav-btn" onclick="showSection('students-sec')">Students</button>
+            <button class="nav-btn" onclick="showSection('companies-sec')">Companies</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="section active">
+            <h2>System Overview</h2>
+            <div class="grid">
+                <div class="card glass">
+                    <h3>Total Students</h3>
+                    <p id="stat-students" style="font-size: 3rem; font-weight: 700; color: var(--text-main)">0</p>
+                </div>
+                <div class="card glass">
+                    <h3>Total Companies</h3>
+                    <p id="stat-companies" style="font-size: 3rem; font-weight: 700; color: var(--text-main)">0</p>
+                </div>
+            </div>
+            
+            <h2 style="margin-top: 3rem;">Recently Added Companies</h2>
+            <div id="recent-companies" class="grid">
+                <p class="text-muted">No companies added yet.</p>
+            </div>
+        </section>
+
+        <!-- Students Section -->
+        <section id="students-sec" class="section">
+            <h2>Student Management</h2>
+            <div class="grid" style="margin-bottom: 2rem;">
+                <button class="btn-primary" onclick="showForm('student-form')">Register New Student</button>
+            </div>
+            
+            <div id="student-form" class="form-container glass" style="display: none; margin-bottom: 2rem;">
+                <h3>Register Student</h3>
+                <form onsubmit="handleStudentRegister(event)">
+                    <div class="form-group">
+                        <label>Student ID (Number)</label>
+                        <input type="number" id="s-id" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="s-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>CGPA</label>
+                        <input type="number" step="0.01" id="s-cgpa" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Branch (e.g. CS, IT)</label>
+                        <input type="text" id="s-branch" required>
+                    </div>
+                    <button type="submit" class="btn-primary">Register</button>
+                </form>
+            </div>
+
+            <div id="students-list" class="grid">
+                <!-- Students will be rendered here -->
+            </div>
+        </section>
+
+        <!-- Companies Section -->
+        <section id="companies-sec" class="section">
+            <h2>Company Management</h2>
+            <div class="grid" style="margin-bottom: 2rem;">
+                <button class="btn-primary" onclick="showForm('company-form')">Add New Company</button>
+            </div>
+
+            <div id="company-form" class="form-container glass" style="display: none; margin-bottom: 2rem;">
+                <h3>Add Company</h3>
+                <form onsubmit="handleCompanyAdd(event)">
+                    <div class="form-group">
+                        <label>Company ID (Number)</label>
+                        <input type="number" id="c-id" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Company Name</label>
+                        <input type="text" id="c-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Minimum CGPA Required</label>
+                        <input type="number" step="0.01" id="c-cgpa" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Eligible Branches (comma separated)</label>
+                        <input type="text" id="c-branches" placeholder="CS, IT, ECE" required>
+                    </div>
+                    <button type="submit" class="btn-primary">Add Company</button>
+                </form>
+            </div>
+
+            <div id="companies-list" class="grid">
+                <!-- Companies will be rendered here -->
+            </div>
+        </section>
+    </main>
+
+    <div id="toast" class="toast">Action successful!</div>
+
+    <script>
+        // Data Structures (Javascript Equivalents to HashMap, ArrayList, HashSet)
+        const studentsData = new Map(); // Simulates HashMap<Integer, Student>
+        const companiesData = []; // Simulates ArrayList<Company>
+        
+        class Student {
+            constructor(id, name, cgpa, branch) {
+                this.id = id;
+                this.name = name;
+                this.cgpa = parseFloat(cgpa);
+                this.branch = branch;
+                this.isPlaced = false;
+                this.appliedCompanyIds = new Set(); // Simulates HashSet<Integer>
+            }
+        }
+
+        class Company {
+            constructor(id, name, minCgpa, branchesStr) {
+                this.id = id;
+                this.name = name;
+                this.minCgpa = parseFloat(minCgpa);
+                // Simulates HashSet<String>
+                this.eligibleBranches = new Set(branchesStr.split(',').map(b => b.trim().toUpperCase())); 
+            }
+        }
+
+        // Navigation Logic
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(sectionId).classList.add('active');
+            event.currentTarget.classList.add('active');
+            
+            updateUI();
+        }
+
+        function showForm(formId) {
+            const form = document.getElementById(formId);
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${isError ? 'error' : ''} show`;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // Core Logic
+        function handleStudentRegister(e) {
+            e.preventDefault();
+            const id = parseInt(document.getElementById('s-id').value);
+            
+            if (studentsData.has(id)) {
+                showToast('Student ID already exists!', true);
+                return;
+            }
+
+            const student = new Student(
+                id,
+                document.getElementById('s-name').value,
+                document.getElementById('s-cgpa').value,
+                document.getElementById('s-branch').value.toUpperCase()
+            );
+            
+            studentsData.set(id, student);
+            e.target.reset();
+            showForm('student-form');
+            showToast('Student registered successfully!');
+            updateUI();
+        }
+
+        function handleCompanyAdd(e) {
+            e.preventDefault();
+            const id = parseInt(document.getElementById('c-id').value);
+            
+            if (companiesData.some(c => c.id === id)) {
+                showToast('Company ID already exists!', true);
+                return;
+            }
+
+            const company = new Company(
+                id,
+                document.getElementById('c-name').value,
+                document.getElementById('c-cgpa').value,
+                document.getElementById('c-branches').value
+            );
+            
+            companiesData.push(company);
+            e.target.reset();
+            showForm('company-form');
+            showToast('Company added successfully!');
+            updateUI();
+        }
+
+        function applyForJob(studentId, companyId) {
+            const student = studentsData.get(studentId);
+            const company = companiesData.find(c => c.id === companyId);
+            
+            if (!student || !company) return;
+            
+            if (student.isPlaced) {
+                showToast('Student is already placed!', true);
+                return;
+            }
+            
+            if (student.cgpa < company.minCgpa || !company.eligibleBranches.has(student.branch)) {
+                showToast('Not eligible for this company!', true);
+                return;
+            }
+            
+            if (student.appliedCompanyIds.has(companyId)) {
+                showToast('Already applied to this company!', true);
+                return;
+            }
+            
+            student.appliedCompanyIds.add(companyId);
+            showToast(`Successfully applied to ${company.name}!`);
+            updateUI();
+        }
+
+        // Placement Status Toggling
+        function togglePlacementStatus(studentId) {
+            const student = studentsData.get(studentId);
+            if (student) {
+                student.isPlaced = !student.isPlaced;
+                showToast(`Student status updated to ${student.isPlaced ? 'Placed' : 'Unplaced'}`);
+                updateUI();
+            }
+        }
+
+        // Render UI
+        function updateUI() {
+            // Stats
+            document.getElementById('stat-students').textContent = studentsData.size;
+            document.getElementById('stat-companies').textContent = companiesData.length;
+
+            // Render Companies
+            const companiesList = document.getElementById('companies-list');
+            const recentCompanies = document.getElementById('recent-companies');
+            let companiesHTML = '';
+            
+            companiesData.forEach(c => {
+                const branches = Array.from(c.eligibleBranches).map(b => `<span class="badge">${b}</span>`).join('');
+                companiesHTML += `
+                    <div class="card glass">
+                        <h3>${c.name} (ID: ${c.id})</h3>
+                        <p><strong>Min CGPA:</strong> ${c.minCgpa}</p>
+                        <div style="margin-top: 1rem;">${branches}</div>
+                    </div>
+                `;
+            });
+            
+            companiesList.innerHTML = companiesHTML || '<p class="text-muted">No companies found.</p>';
+            recentCompanies.innerHTML = companiesHTML || '<p class="text-muted">No companies added yet.</p>';
+
+            // Render Students
+            const studentsList = document.getElementById('students-list');
+            let studentsHTML = '';
+            
+            studentsData.forEach(s => {
+                // Determine eligibility and application status for ALL companies
+                let companyStatuses = companiesData.map(c => {
+                    const hasApplied = s.appliedCompanyIds.has(c.id);
+                    const cgpaEligible = s.cgpa >= c.minCgpa;
+                    const branchEligible = c.eligibleBranches.has(s.branch);
+
+                    if (s.isPlaced) {
+                        return `<p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">${c.name}: <span style="color:var(--success)">Cannot apply (Already Placed)</span></p>`;
+                    } else if (hasApplied) {
+                        return `<p style="font-size: 0.85rem; color: var(--primary); margin-top: 0.5rem; font-weight:bold;">${c.name}: Applied Successfully ✓</p>`;
+                    } else if (!cgpaEligible) {
+                        return `<p style="font-size: 0.85rem; color: var(--danger); margin-top: 0.5rem;">${c.name}: Not Eligible (CGPA too low. Requires ${c.minCgpa})</p>`;
+                    } else if (!branchEligible) {
+                        return `<p style="font-size: 0.85rem; color: var(--danger); margin-top: 0.5rem;">${c.name}: Not Eligible (Branch mismatch)</p>`;
+                    } else {
+                        return `<button class="btn-primary btn-sm" style="margin-top: 0.5rem; margin-right: 0.5rem;" 
+                            onclick="applyForJob(${s.id}, ${c.id})">
+                            Apply to ${c.name}
+                        </button>`;
+                    }
+                }).join('');
+
+                studentsHTML += `
+                    <div class="card glass">
+                        <h3>${s.name}</h3>
+                        <p><strong>ID:</strong> ${s.id} | <strong>Branch:</strong> ${s.branch}</p>
+                        <p><strong>CGPA:</strong> ${s.cgpa}</p>
+                        
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:0.5rem; margin-bottom: 1rem;">
+                            <p><strong>Status:</strong> ${s.isPlaced ? '<span style="color:var(--success); font-weight:bold;">Placed</span>' : 'Unplaced'}</p>
+                            <button class="btn-primary btn-sm" style="background: var(--text-muted);" onclick="togglePlacementStatus(${s.id})">
+                                Toggle Placement Status
+                            </button>
+                        </div>
+                        
+                        <div style="border-top: 1px solid var(--glass-border); padding-top: 1rem;">
+                            <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;">Job Opportunities & Eligibility</p>
+                            ${companyStatuses || '<p style="font-size: 0.875rem;">No companies added yet.</p>'}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            studentsList.innerHTML = studentsHTML || '<p class="text-muted">No students found.</p>';
+        }
+        
+        // Add some mock data initially to showcase
+        setTimeout(() => {
+            companiesData.push(new Company(101, "TechCorp", 7.5, "CS, IT"));
+            companiesData.push(new Company(102, "DataSys", 8.0, "CS, ECE"));
+            studentsData.set(1, new Student(1, "Alice Johnson", 8.2, "CS"));
+            updateUI();
+        }, 100);
+
+    </script>
+</body>
+</html>
